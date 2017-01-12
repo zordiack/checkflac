@@ -144,5 +144,4 @@ sed -i '1s/^/"Artisti","Albumi"\n/' /home/flac/dblist.csv
 scp -C /home/flac/dblist.txt wappuradio@munkki.wappuradio.fi:/home/www/intra/dblist.txt
 scp -C /home/flac/dblist.csv wappuradio@munkki.wappuradio.fi:/home/www/intra/dblist.csv
 scp -C /home/flac/dbcount.txt wappuradio@munkki.wappuradio.fi:/home/www/intra/dbcount.txt
-#rsync -a /home/wappuradio/db 130.230.31.82:/srv/nfs/music
 fi
