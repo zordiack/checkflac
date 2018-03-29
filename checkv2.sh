@@ -9,11 +9,15 @@ wappudb=/home/wappuradio/db
 # permissionit kuntoon
 find $flacroot -type f -exec chmod 644 {} +
 find $flacroot -type d -exec chmod 755 {} +
+# merkistösanity(loss)
+convmv --notest -f ISO-8859-15 -t UTF-8 $flacroot/* &>/dev/null
 
 # yksittäisen kansion tarkistus
 
 function check {
     cd "$1" 2>/dev/null  || exit 2
+    #merkistösanity
+    convmv --notest -f ISO-8859-15 -t UTF-8 * &>/dev/null
     CUES=$(ls *.cue 2>/dev/null|wc -l)
     if [[ "$CUES" -ne "1" ]]; then
       error=1
@@ -87,8 +91,11 @@ function status {
 cd "$flacroot"
 if [[ "$(ls |wc -l)" -ne "0" ]]; then
 for ripdir in */; do
-  INDB=$(find "$wappudb"/"$ripdir" -type d 2>/dev/null |wc -l)
-  if [[ "$INDB" -ne "0" ]]; then
+  # täytyy tarkastaa molemmat, uploadin dirri ja NAS listaus kun NAS ei päällä
+  INDBLOCAL=$(find "$wappudb"/"$ripdir" -type d 2>/dev/null |wc -l)
+  ripname=$(echo "${ripdir::-1}")
+  INDB=$(cat /home/wappuradio/wappuradio/dblist.txt |grep "$ripname" 2>/dev/null |wc -l)
+  if [ "$INDB" -ne "0" ] || [ "$INDBLOCAL" -ne "0" ]; then
     echo "Checking $ripdir"
     echo "  Skipping, already in database."
     continue
@@ -130,7 +137,7 @@ for ripdir in */; do
   mv "$ripdir" "$wappudb" 2>/dev/null || echo "Already in database."
   # irkkibotille notice
   sleep 1
-  echo "/notice #radiontoimitus :$ripdir" > "/home/wappuradio/irc/irc.cs.tut.fi/#radiontoimitus/in"
+  echo "/notice #radiontoimitus :$ripdir" > "/home/wappuradio/irc/irc.nebula.fi/#radiontoimitus/in"
 done
 
 # päivitetään listaus ja lähetetään munkille
@@ -141,7 +148,10 @@ cp /home/wappuradio/temp.list /home/flac/dblist.txt
 cp /home/wappuradio/temp.list /home/flac/dblist.csv
 sed -i -e 's/^/"/;s/ - [0-9]*$//g;s/$/"/;s/ - /","/' /home/flac/dblist.csv
 sed -i '1s/^/"Artisti","Albumi"\n/' /home/flac/dblist.csv
-scp -C /home/flac/dblist.txt wappuradio@munkki.wappuradio.fi:/home/www/intra/dblist.txt
-scp -C /home/flac/dblist.csv wappuradio@munkki.wappuradio.fi:/home/www/intra/dblist.csv
-scp -C /home/flac/dbcount.txt wappuradio@munkki.wappuradio.fi:/home/www/intra/dbcount.txt
+#rip munkki
+#scp -C /home/flac/dblist.txt wappuradio@munkki.wappuradio.fi:/home/www/intra/dblist.txt
+#scp -C /home/flac/dblist.csv wappuradio@munkki.wappuradio.fi:/home/www/intra/dblist.csv
+#scp -C /home/flac/dbcount.txt wappuradio@munkki.wappuradio.fi:/home/www/intra/dbcount.txt
+#scp -C /home/flac/{dblist.txt,dblist.csv,dbcount.txt} upload@sauron.wappuradio.fi:/var/www/intra/
+#rsync -a /home/wappuradio/db 130.230.31.82:/srv/nfs/music
 fi
